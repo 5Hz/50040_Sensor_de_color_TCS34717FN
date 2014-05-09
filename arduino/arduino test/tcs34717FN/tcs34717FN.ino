@@ -32,8 +32,8 @@ unsigned int RedLow = 0;
 unsigned int RedHigh = 0;
 unsigned int GreenLow = 0;
 unsigned int GreenHigh = 0;
-unsigned int BLow = 0;
-unsigned int BHigh = 0;
+unsigned int BlueLow = 0;
+unsigned int BlueHigh = 0;
 unsigned int CLow = 0;
 unsigned int CHigh = 0;
 
@@ -99,7 +99,7 @@ Serial.print(RedHigh, DEC);
 
 
 Wire.beginTransmission(0x29);
-Wire.write(0x9A);
+Wire.write(0x98);
 Wire.endTransmission();
 
 Wire.beginTransmission(0x29); 
@@ -108,7 +108,7 @@ GreenLow = Wire.read();
 Wire.endTransmission();
 
 Wire.beginTransmission(0x29);
-Wire.write(0x9B);
+Wire.write(0x99);
 Wire.endTransmission();
 
 Wire.beginTransmission(0x29); 
@@ -116,10 +116,34 @@ Wire.requestFrom(0x29,1);
 GreenHigh = Wire.read();
 Wire.endTransmission();
 
-
 GreenHigh = (GreenHigh * 256) + GreenLow;
+
 Serial.print("            ");
-Serial.println(GreenHigh, DEC);
+Serial.print(GreenHigh, DEC);
+
+Wire.beginTransmission(0x29);
+Wire.write(0x9A);
+Wire.endTransmission();
+
+Wire.beginTransmission(0x29); 
+Wire.requestFrom(0x29,1);
+BlueLow = Wire.read();
+Wire.endTransmission();
+
+Wire.beginTransmission(0x29);
+Wire.write(0x9B);
+Wire.endTransmission();
+
+Wire.beginTransmission(0x29); 
+Wire.requestFrom(0x29,1);
+BlueHigh = Wire.read();
+Wire.endTransmission();
+
+BlueHigh = (BlueHigh * 256) + BlueLow;
+
+Serial.print("            ");
+Serial.println(BlueLow, DEC);
+
 delay(500);
 }
 
