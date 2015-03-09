@@ -1,9 +1,8 @@
 #include <Wire.h>
 
-
 //definicion de registros del sensor *******************************************************
 #define colorsin           0x29   //direccion del sensor de color
-//      -Nombre-        -direcciÃ³n-
+//      -Nombre-        -direccion-
 #define ENABLE             0x80   // R/W
 #define ATIME              0x81   // R/W
 #define WTIME              0x83   // R/W
@@ -24,159 +23,103 @@
 #define GDATAH             0x99   // R
 #define BDATA              0x9A   // R
 #define BDATAH             0x9B   // R
+//----------------------------------------------------------------------------------------------------------
+//Prototipos de funciones
 
+byte leeRegistro(int _address_, int _register_);
+unsigned int concatenar(byte _highByte_, byte _lowByte_);
+void escribeRegistro(int _address_, int _register_, byte _value_);
+//----------------------------------------------------------------------------------------------------------
 
-byte receivedVal = 0x00;
+//funciones comunicacion I2C *******************************************************************************
 
-unsigned int RedLow = 0;
-unsigned int RedHigh = 0;
-unsigned int GreenLow = 0;
-unsigned int GreenHigh = 0;
-unsigned int BlueLow = 0;
-unsigned int BlueHigh = 0;
-unsigned int CLow = 0;
-unsigned int CHigh = 0;
-
-  byte leeRegistro(int _address_, int _register_);
-  int concatenate(byte _highByte_, byte _lowByte_);
-  void escribeRegistro(int _address_, int _register_, byte _value_);
-  
-void setup()
-{
-
-Wire.begin();
-
-Serial.begin(9600);
-Serial.write("Convertidor de luz a digital" "\n");
-
-escribeRegistro(colorsin, ENABLE, 0x03);
-Wire.beginTransmission(colorsin);
-Wire.write(0x80);
-Wire.write(0x03); 
-Wire.endTransmission();
-
-Wire.beginTransmission(colorsin); 
-Wire.requestFrom(0x29,1);
-receivedVal = Wire.read();
-Wire.endTransmission();
-
-if (receivedVal == 0x03) {
-Serial.write("ADC" "\n");
-}
-else {
-Serial.write("la conexion al sensor fallo: ");
-Serial.println(receivedVal, DEC);
-}
-
-delay(50); 
-
-}
-
-void loop() 
-{
-Wire.beginTransmission(colorsin);
-Wire.write(0x96);
-Wire.endTransmission();
-
-Wire.beginTransmission(colorsin); 
-Wire.requestFrom(colorsin,1);
-RedLow = Wire.read();
-Wire.endTransmission();
-
-Wire.beginTransmission(colorsin);
-Wire.write(0x97);
-Wire.endTransmission();
-
-Wire.beginTransmission(colorsin); 
-Wire.requestFrom(colorsin,1);
-RedHigh = Wire.read();
-Wire.endTransmission();
-
-
-RedHigh = (RedHigh * 256) + RedLow;
-
-Serial.print(RedHigh, DEC);
-
-
-Wire.beginTransmission(0x29);
-Wire.write(0x98);
-Wire.endTransmission();
-
-Wire.beginTransmission(0x29); 
-Wire.requestFrom(0x29,1);
-GreenLow = Wire.read();
-Wire.endTransmission();
-
-Wire.beginTransmission(0x29);
-Wire.write(0x99);
-Wire.endTransmission();
-
-Wire.beginTransmission(0x29); 
-Wire.requestFrom(0x29,1);
-GreenHigh = Wire.read();
-Wire.endTransmission();
-
-GreenHigh = (GreenHigh * 256) + GreenLow;
-
-Serial.print("            ");
-Serial.print(GreenHigh, DEC);
-
-Wire.beginTransmission(0x29);
-Wire.write(0x9A);
-Wire.endTransmission();
-
-Wire.beginTransmission(0x29); 
-Wire.requestFrom(0x29,1);
-BlueLow = Wire.read();
-Wire.endTransmission();
-
-Wire.beginTransmission(0x29);
-Wire.write(0x9B);
-Wire.endTransmission();
-
-Wire.beginTransmission(0x29); 
-Wire.requestFrom(0x29,1);
-BlueHigh = Wire.read();
-Wire.endTransmission();
-
-BlueHigh = (BlueHigh * 256) + BlueLow;
-
-Serial.print("            ");
-Serial.println(BlueLow, DEC);
-
-delay(500);
-}
-
-//funciones comunicacion I2C *************************************************************
-
-//lee registro de sensor por protocolo I2C ***********************************************
-//requiere direccion del sensor y registro a leer ****************************************
+//lee registro de sensor por protocolo I2C
+//requiere direccion del sensor y registro a leer
 byte leeRegistro(int _address_, int _register_)
 {
   Wire.beginTransmission(_address_); //inicia comunicacion con sensor elegido
   Wire.write(_register_);            //escribe el registro del cual solicitas la informacion
   Wire.endTransmission();            //termina la transmision
+  
+  Wire.beginTransmission(_address_);
   Wire.requestFrom(_address_, 1);    //solicita 1 byte del sensor elegido (previamente elegido)
-  do{}while(Wire.available() < 1);   //espera a recibir la informacion del registro
   byte valorRegistro = Wire.read();  //guarda valor recibido
+  Wire.endTransmission();
   return valorRegistro;              //regresa el valor al programa principal
 }
+//----------------------------------------------------------------------------------------------------------
 
-//escribe sobre un registro del sensor por protocolo I2C **********************************
-//requiere direccion del sensor, registro a escribir, y valor a escribir en el ************
+//escribe sobre un registro del sensor por protocolo I2C
+//requiere direccion del sensor, registro a escribir, y valor a escribir en el
 void escribeRegistro(int _address_, int _register_, byte _value_)
 {
   Wire.beginTransmission(_address_); //inicia comunicacion con el sensor seleccionado
   Wire.write(_register_); //selecciona el registro al cual leer/escribir
   Wire.write(_value_); //modo de medicion continua
-  Serial.print("estado de transmision: "); Serial.println(Wire.endTransmission()); //termina la transmision
+  Wire.endTransmission();
+  //Serial.print("estado de transmision: "); Serial.println(Wire.endTransmission()); //termina la transmision
   //e imprime en el serial su estado (exitosa o no)
 }
+//----------------------------------------------------------------------------------------------------------
 
-//concatena 2 bytes para convertirlos en una palabra (tipo de dato integer) ***************
-int concatenate(byte _highByte_, byte _lowByte_)
+//concatena 2 bytes para convertirlos en una palabra (tipo de dato integer)
+unsigned int concatenar(byte _highByte_, byte _lowByte_)
 {
   int _integer_ = (_highByte_ <<8) | _lowByte_; //crea un entero a partir de sus 2 bytes (MSB y LSB)
   return _integer_;
 }
+//----------------------------------------------------------------------------------------------------------
 
+//***********************************************************************************************************
+//Programa principal:
+void setup()
+{
+  Wire.begin();
+  Serial.begin(9600);
+  
+  pinMode(12, OUTPUT);
+  digitalWrite(12, HIGH);
+  delay(100);
+  digitalWrite(12, LOW);
+  delay(100);
+  digitalWrite(12, HIGH);
+  
+  Serial.write("Convertidor de color a digital" "\n");
+  
+  //Habilita el sensor
+  escribeRegistro(colorsin, ENABLE, 0x03);
+  byte valorRegistroEnable = leeRegistro(colorsin, ENABLE);
+  //verifica que se haya habilitado correctamente
+  if (valorRegistroEnable == 0x03) {
+    Serial.write("Inicializacion exitosa :)" "\n");
+  }
+  else {
+    Serial.write("la conexion al sensor fallo :(" "\n" "valor recibido: ");
+    Serial.println(valorRegistroEnable, DEC);
+    while(true) ; //el programa no hace nada si falla la comunicacion
+  }
+  delay(50); 
+}
+//----------------------------------------------------------------------------------------------------------
+
+void loop() 
+{
+  byte RedLow = leeRegistro(colorsin, RDATA);
+  byte RedHigh = leeRegistro(colorsin, RDATAH);
+  unsigned int Red = concatenar(RedHigh, RedLow);
+  Serial.print(Red, DEC);
+  
+  byte GreenLow = leeRegistro(colorsin, GDATA);
+  byte GreenHigh = leeRegistro(colorsin, GDATAH);
+  unsigned int Green = concatenar(GreenHigh, GreenLow);
+  Serial.print("            ");
+  Serial.print(Green, DEC);
+  
+  byte BlueLow = leeRegistro(colorsin, BDATA);
+  byte BlueHigh = leeRegistro(colorsin, BDATAH);
+  unsigned int Blue = concatenar(BlueHigh, BlueLow);
+  Serial.print("            ");
+  Serial.println(Blue, DEC);
+  delay(500);
+}
+//----------------------------------------------------------------------------------------------------------
